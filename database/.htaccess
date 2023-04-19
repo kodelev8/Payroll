@@ -1,0 +1,6 @@
+ 
+	
+RewriteEngine on
+RewriteBase    /dtrms/
+RewriteCond $1 !^(index\.php|images|js|css|fonts|dist|%20js|robots\.txt)
+RewriteRule ^(.*)$ /dtrms/index.php/$1 [L]

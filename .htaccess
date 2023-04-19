@@ -1,0 +1,6 @@
+ 
+	
+RewriteEngine on
+RewriteBase    /payroll/
+RewriteCond $1 !^(index\.php|images|js|css|fonts|dist|templates|%20js|robots\.txt)
+RewriteRule ^(.*)$ /payroll/index.php/$1 [L]

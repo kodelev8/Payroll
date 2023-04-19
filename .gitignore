@@ -1,0 +1,11 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/application/logs
+/.vs/Payroll/v17
+*.vsidx
+/.vs/Payroll/FileContentIndex/read.lock
+/.vs/Payroll/DesignTimeBuild/.dtbcache.v2
+/Payroll.phpproj
+/Payroll.phpproj.user

@@ -1,0 +1,408 @@
+<?php
+/**
+ * -------------------------------------------------------------------
+ * mIndex Model
+ * -------------------------------------------------------------------
+ * This file is for the sql queries.
+ * Author:  
+ */
+class  mindex_payslips extends CI_Model
+{
+	public function __construct()
+    {
+        parent::__construct();
+    }
+    
+	/**
+	 * Function ...
+	 * This function ...
+	 */
+	function payslips_view($PS_per_page=0,$PS_row=0,$PS_total=0)
+	{
+		$this->dbAll = $this->load->database('default', TRUE);
+  		$query = $this->dbAll->query("select top $PS_per_page * from vw_payslips where PS_row between $PS_row and $PS_total order by Ps_Id Asc"); 	
+  		return $query->result();		
+	}
+	function count_payslips()
+	{
+		$this->dbAll = $this->load->database('default', TRUE);
+		$query = $this->dbAll->query("select COUNT(*) as count_payslips from vw_payslips  where ps_deleted = 0 ");
+		return $query->row();
+	}
+	function count_payslips_process($PS_date_from=0,$PS_date_to=0)
+	{
+		$this->dbAll = $this->load->database('default', TRUE);
+		$query = $this->dbAll->query("select COUNT(*) as count_payslips from vw_payslips  where ts_date	 between CAST ('2014-03-01' AS DATE) AND CAST ('2014-03-15' AS DATE) ts_deleted = 0 ");
+		return $query->row();
+	}
+	function get_payslips_emp_no()
+	{
+		$this->dbAll = $this->load->database('default', TRUE);
+		$query = $this->dbAll->query("select emp_no from vwEmployee where emp_deleted =0 ");
+		return $query->result();
+	}
+	function get_timesheets_process($ts_emp_no=0,$wk_start_date="",$wk_end_date="")
+	{
+		$this->dbAll = $this->load->database('default', TRUE);
+		$query = $this->dbAll->query("select * from vw_Timesheets where TS_Emp_No = '$ts_emp_no' and TS_Date between  
+				'$wk_start_date' and '$wk_end_date'  and TS_Deleted = 0  and ts_obselete =0");
+		return $query->result();
+	}
+		
+	function payslips_process($PS_emp_no = "",$PS_date_from = "",$PS_date_to = "" )
+	{
+		$this->dbAll = $this->load->database('default', TRUE);
+		$query = $this->dbAll->query("exec Sp_createpayslipsrecord '$PS_emp_no','$PS_date_from','$PS_date_to' ");
+		// 		return $query->result();
+	}
+	function payslips_num_rows()
+	{
+		$this->dbAll = $this->load->database('default', TRUE);
+		$query = $this->dbAll->query("select [No of Rows] NumRows ,  * from [rows per page] ");
+		return $query->result();
+	}
+	function active_payslips_num_rows()
+	{
+		$this->dbAll = $this->load->database('default', TRUE);
+		$query = $this->dbAll->query("select [No of Rows] NumRows , 	* from [rows per page] where active =1 ");
+		return $query->row();
+	}
+	function update_payslips_num_rows($per_page=0)
+	{
+		$this->dbAll = $this->load->database('default', TRUE);
+		$query = $this->dbAll->query("update [rows per page] set Active = 0 ");
+		$query = $this->dbAll->query("update [rows per page] set Active = 1  where [No of Rows] = $per_page");
+	}
+	function getpayslip_print($Ps_id =0)
+	{
+		$this->dbAll = $this->load->database('default', TRUE);
+		$query = $this->dbAll->query("select  * from vw_payslips where ps_id =$Ps_id ");
+		return $query->row();
+	}
+	function get_allowance($Ps_emp_no="",$ps_date_from ="",$ps_date_to ="")
+	{
+		$this->dbAll = $this->load->database('default', TRUE);
+		$query = $this->dbAll->query("SELECT * FROM  vwAllowance
+			WHERE  Allowance_Emp_No	 = '$Ps_emp_no' and  Allowance_Date between '$ps_date_from' and '$ps_date_to'");
+		return $query->result();
+	}
+	function get_deduction($Ps_emp_no="",$ps_date_from ="",$ps_date_to ="")
+	{
+		$this->dbAll = $this->load->database('default', TRUE);
+		$query = $this->dbAll->query("SELECT * FROM  vwdeduction
+			WHERE  Deduction_Emp_No	 = '$Ps_emp_no' and  Deduction_Date between '$ps_date_from' and '$ps_date_to'");
+		return $query->result();
+	}
+	function get_deduction_ca($Ps_id="")
+	{
+		$this->dbAll = $this->load->database('default', TRUE);
+		$query = $this->dbAll->query("SELECT * FROM  vwdeduction where deduction_id in ($Ps_id) and deduction_description like '%cash%'");
+		return $query->row();
+	}
+	function get_deduction_uni($Ps_id="")
+	{
+		$this->dbAll = $this->load->database('default', TRUE);
+		$query = $this->dbAll->query("SELECT * FROM  vwdeduction where deduction_id in ($Ps_id) and deduction_description like '%uniform%'");
+		return $query->row();
+	}
+	
+	function get_employee_info($Ps_emp_no="")
+	{
+		$this->dbAll = $this->load->database('default', TRUE);
+		$query = $this->dbAll->query("SELECT * FROM  vwemployee WHERE  emp_no = '$Ps_emp_no'");
+		return $query->row();
+	}
+	function get_treeview($treeview_name='')
+	{
+		$this->dbAll = $this->load->database('default', TRUE);
+		$query = $this->dbAll->query("select * from treeview where treeviewname = '$treeview_name'");
+		return $query->row();
+	}
+	function generate_reports_ts($filename='',$month=0,$year=0)
+	{
+		$this->dbAll = $this->load->database('default', TRUE);
+		$query = $this->dbAll->query(" EXEC	[dbo].[Sp_generate_report]@file = '$filename',@month = '$month',@year = '$year'");
+// 		echo " EXEC	[dbo].[Sp_generate_report]@file = '$filename',@month = '$month',@year = '$year'";
+// 		return $query->row();
+	}
+	function payslip_view_search($payslip_per_page=0,$payslip_search="",$payslip_row=0,$payslip_total=0)
+	{
+		$this->dbAll = $this->load->database('default', TRUE);
+		$query = $this->dbAll->query("select top $payslip_per_page * from fnSearchpayslips('$payslip_search') where payslip_row between $payslip_row and $payslip_total and ps_deleted = 0 order by ps_id desc");
+		return $query->result();
+// 		echo "select top $payslip_per_page * from fnSearchpayslips('$payslip_search') where payslip_row between $payslip_row and $payslip_total and ps_deleted = 0 order by Ps_Date_From desc";
+	}
+	function count_payslip_search($payslip_search="")
+	{
+		$this->dbAll = $this->load->database('default', TRUE);
+		$query = $this->dbAll->query("select COUNT(*) as count_payslips from fnSearchpayslips('$payslip_search')");
+		return $query->row();
+	}
+	function get_employees()
+	{
+		$this->dbAll = $this->load->database('default', TRUE);
+  		$query = $this->dbAll->query("select emp_last_name+', ' +emp_first_name emp_name,* from vwEmployee order by emp_last_name asc"); 	
+  		return $query->result();		
+	}
+	function get_employee_number()
+	{
+		$this->dbAll = $this->load->database('default', TRUE);
+		$query = $this->dbAll->query("select emp_last_name+', ' +emp_first_name emp_name,* from vwEmployee order by emp_no asc");
+		return $query->result();
+	}
+	function get_emp_info($emp_no='')
+	{
+		$this->dbAll = $this->load->database('default', TRUE);
+		$query = $this->dbAll->query("select * from [vwemployee] where emp_no = '$emp_no' ");
+		return $query->row();
+	}
+	function get_current_weeknr($week_no=0)
+	{
+		$this->dbAll = $this->load->database('default', TRUE);
+		$query = $this->dbAll->query("exec [sp_getcurrentweekno] $week_no");
+		return $query->result_array();
+	}
+	function get_top_emp_no()
+	{
+		$this->dbAll = $this->load->database('default', TRUE);
+		$query = $this->dbAll->query("select top 1 emp_no from vwEmployee order by (emp_last_name+' '+emp_first_name) asc");
+		return $query->row();
+	}
+	
+	function list_dates($StartDate='',$EndDate='')
+	{
+		$this->dbAll = $this->load->database('default', TRUE);
+			$query = $this->dbAll->query("exec [sp_listdates] '$StartDate','$EndDate'");
+			return $query->result_array();  
+	}
+	function list_dates_from_ts($emp_no = '',$StartDate='',$EndDate='')
+	{
+		$this->dbAll = $this->load->database('default', TRUE);
+		$query = $this->dbAll->query(" select row_number() over(order by ts_id asc) [level], CONVERT(char(10), TS_Date,126) [date] , 
+ 			FORMAT(TS_Hours_In,'hh:mm tt') [login],
+			FORMAT(TS_Hours_Out,'hh:mm tt') [logout],
+			FORMAT(TS_Hours_Lunch_Out,'hh:mm tt') lunchout,
+			FORMAT(TS_Hours_Lunch_In,'hh:mm tt')	lunchin from vw_Timesheets 
+				where TS_Emp_No = '$emp_no' and TS_Date between  '$StartDate' and  '$EndDate' order by ts_date asc");
+		return $query->result();
+	}
+	function process_dtr_to_ts($ts_date='',$ts_emp_no='')
+	{
+		$this->dbAll = $this->load->database('default', TRUE);
+		$query = $this->dbAll->query("exec [sp_processDTR] '$ts_date','$ts_emp_no'");
+	 
+	}
+
+	function get_payslips($ps_emp_no='',$ps_date_from='',$ps_date_to='')
+	{
+		$this->dbAll = $this->load->database('default', TRUE);
+		$query = $this->dbAll->query("select * from vw_Payslips where Ps_Emp_No = '$ps_emp_no' and Ps_Date_From = '$ps_date_from'
+				and Ps_Date_To ='$ps_date_to' and Ps_deleted =0");
+		return $query->row();
+	
+	}
+	function get_payslip_print($emp_no='',$StartDate='',$EndDate='')
+	{
+		$this->dbAll = $this->load->database('default', TRUE);
+		$query = $this->dbAll->query("select top 1 * from vw_Payslips where Ps_Emp_No = '$emp_no' and Ps_Date_From between '$StartDate' 
+				and  '$EndDate' and Ps_deleted =0");
+		return $query->row();
+	
+	}
+	function get_sum_allowance($emp_no='',$date_from='',$date_to='')
+	{
+		$this->dbAll = $this->load->database('default', TRUE);
+		$query = $this->dbAll->query("select * from [fngettotal_allowance_deduction] ('$emp_no','$date_from','$date_to')");
+		return $query->row();
+	
+	}	
+	function get__Payslips($emp_no='',$date_from='',$date_to='')
+	{
+		$this->dbAll = $this->load->database('default', TRUE);
+		$query = $this->dbAll->query("select * from vw_Payslips");
+		return $query->result();
+	
+	}
+	//
+// 	function get_emp_no($sel_name='')
+// 	{
+// 		$this->dbAll = $this->load->database('default', TRUE);
+// 		$query = $this->dbAll->query("select emp_no from [vwemployee] where (emp_first_name + ' ' +emp_last_name) = '$sel_name' ");
+// 		return $query->row();
+// 	}
+// 	function save_dtr_log($dtr_emp_id = 0, $dtr_emp_no = 0, $dtr_option = 0, $dtr_option_name = '')
+// 	{
+// 		$this->dbAll = $this->load->database('default', TRUE);
+// 		$query = $this->dbAll->query("INSERT INTO [dbo].[Daily Time Record]
+// 				([User ID],[Emp No] ,[Option],[Option Name],[Deleted],Time)
+// 				VALUES
+// 				('$dtr_emp_id','$dtr_emp_no','$dtr_option','$dtr_option_name',0 ,getdate())");
+		
+// 	}
+// 	function show_emp_info($dtr_emp_no = 0)
+// 	{
+// 		$this->dbAll = $this->load->database('default', TRUE);
+// 		$query = $this->dbAll->query("SELECT  [Emp No] as emp_no FROM Users
+// 				where [Emp No] = '$dtr_emp_no' and  deleted = '0'");
+	
+// 		return $query->row();
+// 	}
+	
+// 	function check_dual_remarks($dtr_emp_no = '', $dtr_option_name = '')
+// 	{
+// 		$this->dbAll = $this->load->database('default', TRUE);
+// 		$query = $this->dbAll->query("select * from fnDailyTimeRecord() where dtr_emp_no = '$dtr_emp_no' and dtr_option_name = '$dtr_option_name'");
+// 		return $query->row();
+// 	}
+// 	function check_option_login($dtr_emp_no = '', $dtr_option_name = '')
+// 	{
+// 		$this->dbAll = $this->load->database('default', TRUE);
+// 		$query = $this->dbAll->query("select emp_no from fnTimeRecordOptionCheck() where emp_no = '$dtr_emp_no' ");
+// 		return $query->row();
+// 	}
+// // 	[fnTimeRecordOptionCheck]
+// 	function send_email_dtr($dtr_emp_email = "",$dtr_option_name= "", $dtr_full_name="")
+// 	{	
+// // 		$dtr_emp_email="emerson@prechart.com";
+// // 		$config['protocol'] = 'smtp';
+// // 		$config['smtp_host'] = 'smtp.mailgun.org';
+// // 		$config['smtp_port'] = 'tls';
+// // 		$config['smtp_port'] = 587;
+// // 		$config['smtp_user'] = 'postmaster@sandboxb54ff44cb80b405eaf0473c3695de74a.mailgun.org';
+// // 		$config['smtp_pass'] = '4op65jnrxap1';
+// // 		$config['mailtype']  = 'html';
+// // 		date_default_timezone_set('Asia/Taipei');
+// // 		$date = date('Y-m-d h:m:s');
+// // 		$html_email = "<table><tr><td>Hi Peter,</td>".'<tr><td>'.$dtr_full_name .' '. '['.$dtr_option_name.
+// // 		' '.$date.']'.'</td></tr><tr><td></td></tr><tr><td>'.$dtr_full_name.'</td></tr></table>';
+// // 		$this->load->library('email', $config);
+// // 		$this->email->set_newline("\r\n");
+			
+// // 		$this->email->from('NO-REPLY@prechart.com');
+// // 		$this->email->to('emerson@prechart.com');
+// // 		$this->email->cc($dtr_emp_email);
+// // 		$this->email->subject('['.$dtr_option_name. ']'.'['.$date.']'.'['.$dtr_full_name.']' );
+// // 		$this->email->set_mailtype("html");
+	
+// // 		$this->email->message($html_email);
+// // 		$this->email->send();
+			
+// 	}
+// 	function dtr_update($dtr_update_id="")
+// 	{
+// 		$this->dbAll = $this->load->database('default', TRUE);
+// 		$query = $this->dbAll->query("update [daily time record] set time = getdate(),
+// 				[changed date]= getdate() where [id] = '$dtr_update_id' ");
+// 	}
+// 	function dtr_date()
+// 	{
+// 		$this->dbAll = $this->load->database('default', TRUE);
+// 		$query = $this->dbAll->query("select convert(varchar(10), getdate(), 103)+ ' ' + convert(varchar(8), getdate(), 108) as date ");
+// 		return $query->row();
+// 	}
+// 	function dtr_get_emp_info()
+// 	{
+// 		$this->dbAll = $this->load->database('default', TRUE);
+// 		$query = $this->dbAll->query("select * from vwemployee where emp_deleted =0");
+// 		return $query->result();
+// 	}
+// 	function dtr_get_emp_id($dtr_emp_no = 0)
+// 	{
+// 		$this->dbAll = $this->load->database('default', TRUE);
+// 		$query = $this->dbAll->query("select emp_user_id from vwemployee where emp_no = '$dtr_emp_no'");
+// 		return $query->row();
+// 	}
+// 	function dtr_add($dtr_emp_id = 0,$dtr_emp_no = 0 ,$dtr_date ="", $dtr_option = 0,$dtr_option_name="" )
+// 	{
+// 		$this->dbAll = $this->load->database('default', TRUE);
+// 		$query = $this->dbAll->query("Insert Into [Daily Time Record] ([User ID],[Emp No],[Time],[Option],[Option Name],[Deleted]) 
+// 				Values ($dtr_emp_id,'$dtr_emp_no','$dtr_date',$dtr_option,'$dtr_option_name',0)");
+// 	}
+// 	function dtr_added_info()
+// 	{
+// 		$this->dbAll = $this->load->database('default', TRUE);
+// 		$query = $this->dbAll->query("select top 1 * from vwpayslips order by ts_id desc");
+// 		return $query->row();
+// 	}
+// 	function update_dtr($dtr_date = "",$dtr_option = 0,$dtr_option_name="", $dtr_id =0 )
+// 	{
+// 		$this->dbAll = $this->load->database('default', TRUE);
+// 		$query = $this->dbAll->query("update [Daily Time Record] set [time] = '$dtr_date' ,[option] = $dtr_option, 
+// 		[option name] = '$dtr_option_name', [changed date] = getdate()  where id = $dtr_id ");
+// // 		echo "update [Daily Time Record] set [time] = '$dtr_date', [option] = $dtr_option, [option name] = '$dtr_option_name' where id = $dtr_id ";
+// 	}
+// 	function dtr_updated_info($dtr_id =0 )
+// 	{
+// 		$this->dbAll = $this->load->database('default', TRUE);
+// 		$query = $this->dbAll->query("select  * from vwpayslips where ts_id = $dtr_id");
+// 		return $query->row();
+// 	}
+// 	function dtr_delete($dtr_id =0 )
+// 	{
+// 		$this->dbAll = $this->load->database('default', TRUE);
+// 		$query = $this->dbAll->query("update [Daily Time Record] set [deleted] = 1, [changed date] = getdate() where id =  $dtr_id");
+// 	}
+// 	function dtr_get_emp_info_first_row()
+// 	{
+// 		$this->dbAll = $this->load->database('default', TRUE);
+// 		$query = $this->dbAll->query("select top 1* from vwemployee");
+// 		return $query->row();
+// 	}
+// 	function dtr_update_info($dtr_id=0)
+// 	{
+// 		$this->dbAll = $this->load->database('default', TRUE);
+// 		$query = $this->dbAll->query("select * from vwpayslips where ts_id = '$dtr_id'");
+// 		return $query->row();
+// 	}
+// 	function dtr_emp_rec($sel_name= '', $cutoffdate = 0, $sel_month = 0, $sel_year = 0)
+// 	{
+// 		$this->dbAll = $this->load->database('default', TRUE);
+// 		$query =  $this->dbAll->query("spGetEmpDTR @EMPNAME='$sel_name', @CUTOFFDATE='$cutoffdate', @MONTH='$sel_month',  @YEAR='$sel_year' ");
+// 		return $query->result_array();
+// 	}
+// 	function dtr_emp_header($sel_name= '', $cutoffdate = 0, $sel_month = 0, $sel_year = 0)
+// 	{
+// 		$this->dbAll = $this->load->database('default', TRUE);
+// 		$query =  $this->dbAll->query("spGetEmpHeaderDTR @EMPNAME='$sel_name', @CUTOFFDATE='$cutoffdate', @MONTH='$sel_month',  @YEAR='$sel_year' ");
+// 		return $query->result_array();
+// 	}
+// 	function dtr_emp_getleave()
+// 	{
+// 		$this->dbAll = $this->load->database('default', TRUE);
+// 		$query =  $this->dbAll->query("spGetCurrentLeaveAvailable");
+// 		return $query->result_array();
+// 	}
+// 	function post_GetEmpLeaveAvailable($post_name="",$post_month="",$post_year="")
+// 	{
+// 		$this->dbAll = $this->load->database('default', TRUE);
+// 		$query =  $this->dbAll->query("spGetEmpLeaveAvailable @empname='$post_name', @month='$post_month', @year='$post_year'");
+// 		return $query->result_array();
+// 		//echo "spGetEmpLeaveAvailable @empname='$post_name', @month='$post_month', @year='$post_year'";
+// 	}
+// 	function post_InsertCurrentLeaveAvailable()
+// 	{
+// 		$this->dbAll = $this->load->database('default', TRUE);
+// 		$query =  $this->dbAll->query("spInsertCurrentLeaveAvailable");
+// 		return $query->result_array();
+// 	}
+// 	function check_current_post_leave($sel_name="",$sel_month="",$sel_year="")
+// 	{
+// 		$this->dbAll = $this->load->database('default', TRUE);
+// 		$query =  $this->dbAll->query("select month from [employee leave available] where MONTH =convert(int,'$sel_month' -1) and YEAR=$sel_year
+// 						and [emp no] = (select [Emp No] from Users where ([First Name] +' '+ [Last Name] = '$sel_name') )");
+// 		return $query->result_array();
+// 	}
+// 	function check_last_post_leave($sel_name="",$sel_month="",$sel_year="")
+// 	{
+// 		$this->dbAll = $this->load->database('default', TRUE);
+// 		$query =  $this->dbAll->query("select month from [employee leave available] where MONTH =$sel_month and YEAR=$sel_year
+// 				and [emp no] = (select [Emp No] from Users where ([First Name] +' '+ [Last Name] = '$sel_name') )");
+// 		return $query->result_array();
+// 	}
+// 	function deduct_leave($deduct_name="", $deduct_year=0, $deduct_leave=0)
+// 	{
+// 		$this->dbAll = $this->load->database('default', TRUE);
+// 		$query =  $this->dbAll->query("spDeductLeave @empname='$deduct_name', @year=$deduct_year, @noofleave=$deduct_leave");
+// 		//return $query->result_array();
+// 	}
+}
